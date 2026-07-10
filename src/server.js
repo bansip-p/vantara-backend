@@ -22,7 +22,10 @@ connectDB();
 initSocket(server);
 startDailyMonitoringJob();
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://vantara-frontend.vercel.app',
+  credentials: true,
+}));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
