@@ -1,8 +1,14 @@
 const OpenAI = require('openai');
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const client = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 async function generateConservationStory({ animal, twin, medicalHighlights }) {
+  if (!client) {
+    throw new Error('OpenAI is not configured on this server yet.');
+  }
+
   const prompt = `
 You are writing a short conservation awareness story for a wildlife sanctuary's donor newsletter and website.
 
