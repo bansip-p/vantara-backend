@@ -2,33 +2,60 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Helper: creates the secure "wristband" (token)
 const generateToken = (userId, role) => {
-  return jwt.sign(
-    { id: userId, role: role },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d' } // Wristband is valid for 7 days
-  );
+  return jwt.sign({ id: userId, role: role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
-// REGISTER — creates a new user account
+// Checks password strength and returns a list of problems (empty list = strong enough)
+function getPasswordIssues(password) {
+  const issues = [];
+  if (!password || password.length < 8) issues.push('at least 8 characters');
+  if (!/[A-Z]/.test(password)) issues.push('one uppercase letter');
+  if (!/[a-z]/.test(password)) issues.push('one lowercase letter');
+  if (!/[0-9]/.test(password)) issues.push('one number');
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) issues.push('one special character (e.g. ! @ # $ %)');
+  return issues;
+}
+
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email already registered' });
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'Name, email, and password are all required.' });
     }
 
-    // Scramble the password before saving (never store plain text)
+    // Basic email format check
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+    }
+
+    // Enforce strong password rules
+    const passwordIssues = getPasswordIssues(password);
+    if (passwordIssues.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Password must include ${passwordIssues.join(', ')}.`,
+      });
+    }
+
+    // Check for duplicate email — case-insensitive, so "[email protected]" and "[email protected]" are treated as the same
+    const normalizedEmail = email.toLowerCase().trim();
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email already exists. Please sign in instead, or use a different email.',
+      });
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: normalizedEmail,
       password: hashedPassword,
       role,
     });
@@ -37,29 +64,36 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: 'Account created successfully',
       token,
       user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role },
     });
   } catch (error) {
+    // Handles the rare race-condition case where two identical emails are submitted at the exact same moment
+    if (error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// LOGIN — verifies credentials and issues a wristband
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Please enter both email and password.' });
     }
 
-    // Compare submitted password with the scrambled one in the database
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'No account found with this email address.' });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      return res.status(401).json({ success: false, message: 'Incorrect password. Please try again.' });
     }
 
     const token = generateToken(user._id, user.role);
