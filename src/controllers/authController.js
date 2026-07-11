@@ -107,4 +107,31 @@ exports.login = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+
+  exports.updateProfile = async (req, res) => {
+  try {
+    const { name, password } = req.body;
+    const updates = {};
+
+    if (name) updates.name = name.trim();
+
+    if (password) {
+      const issues = getPasswordIssues(password);
+      if (issues.length > 0) {
+        return res.status(400).json({ success: false, message: `Password must include ${issues.join(', ')}.` });
+      }
+      const salt = await bcrypt.genSalt(10);
+      updates.password = await bcrypt.hash(password, salt);
+    }
+
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true });
+
+    res.status(200).json({
+      success: true,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 };

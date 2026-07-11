@@ -14,6 +14,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const dietRoutes = require('./routes/dietRoutes');
 const testRoutes = require('./routes/testRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const rescueRoutes = require('./routes/rescueRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -37,6 +38,7 @@ app.use('/api/diet', dietRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/uploads', express.static('uploads'));
+app.use('/api/rescue', rescueRoutes);
 
 app.get('/', (req, res) => {
   res.send('🐘 Vantara AI Guardian Platform API is running!');
