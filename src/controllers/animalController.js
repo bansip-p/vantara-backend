@@ -71,17 +71,63 @@ exports.getAnimalProfile = async (req, res) => {
 // GET animal profile by QR code (Feature 8)
 exports.getAnimalByQRCode = async (req, res) => {
   try {
-    const animal = await Animal.findOne({ qrCode: req.params.qrCode });
+    const { qrCode } = req.params;
+    if (!qrCode || qrCode.trim() === '') {
+      return res.status(400).json({ success: false, message: 'QR code is required.' });
+    }
+
+    const animal = await Animal.findOne({ qrCode });
     if (!animal) {
       return res.status(404).json({ success: false, message: 'No animal found for this QR code' });
     }
 
     const digitalTwin = await DigitalTwin.findOne({ animalId: animal._id });
-
     res.status(200).json({ success: true, animal, digitalTwin });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+  // UPDATE an animal's details
+exports.updateAnimal = async (req, res) => {
+  try {
+    const allowedFields = [
+      'name', 'species', 'scientificName', 'gender', 'estimatedAge',
+      'dateOfArrival', 'enclosureLocation', 'currentStatus',
+    ];
+    const updates = {};
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+
+    const animal = await Animal.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
+
+    if (!animal) {
+      return res.status(404).json({ success: false, message: 'Animal not found' });
+    }
+
+    res.status(200).json({ success: true, animal });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// SOFT DELETE an animal — marks inactive, never permanently erases the record
+exports.deleteAnimal = async (req, res) => {
+  try {
+    const animal = await Animal.findByIdAndUpdate(
+      req.params.id,
+      { isActive: false },
+      { new: true }
+    );
+
+    if (!animal) {
+      return res.status(404).json({ success: false, message: 'Animal not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Animal removed successfully', animal });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 };
 
 // UPDATE the digital twin's health score based on new signals (this is where the "AI" runs)
