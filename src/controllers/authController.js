@@ -25,13 +25,11 @@ exports.register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name, email, and password are all required.' });
     }
 
-    // Basic email format check
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email)) {
       return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
     }
 
-    // Enforce strong password rules
     const passwordIssues = getPasswordIssues(password);
     if (passwordIssues.length > 0) {
       return res.status(400).json({
@@ -40,7 +38,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Check for duplicate email — case-insensitive, so "[email protected]" and "[email protected]" are treated as the same
     const normalizedEmail = email.toLowerCase().trim();
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
@@ -69,7 +66,6 @@ exports.register = async (req, res) => {
       user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role },
     });
   } catch (error) {
-    // Handles the rare race-condition case where two identical emails are submitted at the exact same moment
     if (error.code === 11000) {
       return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
     }
@@ -107,8 +103,9 @@ exports.login = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+};
 
-  exports.updateProfile = async (req, res) => {
+exports.updateProfile = async (req, res) => {
   try {
     const { name, password } = req.body;
     const updates = {};
@@ -133,5 +130,4 @@ exports.login = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
-};
 };
