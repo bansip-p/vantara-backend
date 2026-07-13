@@ -9,7 +9,7 @@ const aiAlertSchema = new mongoose.Schema(
     },
     alertType: {
       type: String,
-      enum: ['Behavior', 'Health Prediction', 'Diet', 'Medical'],
+      enum: ['Behavior', 'Health Prediction', 'Diet', 'Medical', 'Medicine Overdue', 'Checkup Overdue'],
       required: true,
     },
     severity: {
