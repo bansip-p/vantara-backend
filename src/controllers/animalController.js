@@ -8,24 +8,24 @@ const { getIO } = require('../utils/socket');
 // CREATE a new animal + its initial digital twin
 exports.createAnimal = async (req, res) => {
   try {
-    const { name, species, scientificName, gender, dateOfBirth, estimatedAge, dateOfArrival, enclosureLocation } = req.body;
+    const {
+      name, species, scientificName, gender, dateOfBirth, estimatedAge, dateOfArrival, enclosureLocation,
+      microchipNumber, rescueNumber, conservationStatus, origin, governmentCaseNumber, forestDepartmentDetails, previousOwner,
+      currentWeightKg, heightCm, bodyConditionScore, bloodGroup, allergyInformation, medicalNotes, currentDiet,
+      currentVeterinarian, currentKeeper, speciesCategory, behaviorStatus, pregnancyStatus, parentInformation,
+    } = req.body;
 
-    // Generate a unique QR code string (e.g. VANTARA-A1B2C3D4)
     const qrCode = `VANTARA-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
     const animal = await Animal.create({
-      name,
-      species,
-      scientificName,
-      gender,
-      dateOfBirth,
-      estimatedAge,
-      dateOfArrival,
-      enclosureLocation,
-      qrCode,
+      name, species, scientificName, gender, dateOfBirth, estimatedAge, dateOfArrival, enclosureLocation, qrCode,
+      microchipNumber, rescueNumber, conservationStatus, origin, governmentCaseNumber, forestDepartmentDetails, previousOwner,
+      currentWeightKg, heightCm, bodyConditionScore, bloodGroup, allergyInformation, medicalNotes, currentDiet,
+      currentVeterinarian: currentVeterinarian || undefined,
+      currentKeeper: currentKeeper || undefined,
+      speciesCategory, behaviorStatus, pregnancyStatus, parentInformation,
     });
 
-    // Every new animal automatically gets a starting Digital Twin
     const twin = await DigitalTwin.create({
       animalId: animal._id,
       healthScore: 100,
@@ -90,8 +90,10 @@ exports.getAnimalByQRCode = async (req, res) => {
 exports.updateAnimal = async (req, res) => {
   try {
     const allowedFields = [
-      'name', 'species', 'scientificName', 'gender', 'estimatedAge',
-      'dateOfArrival', 'enclosureLocation', 'currentStatus',
+      'name', 'species', 'scientificName', 'gender', 'estimatedAge', 'dateOfArrival', 'enclosureLocation', 'currentStatus',
+      'microchipNumber', 'rescueNumber', 'conservationStatus', 'origin', 'governmentCaseNumber', 'forestDepartmentDetails', 'previousOwner',
+      'currentWeightKg', 'heightCm', 'bodyConditionScore', 'bloodGroup', 'allergyInformation', 'medicalNotes', 'currentDiet',
+      'currentVeterinarian', 'currentKeeper', 'speciesCategory', 'behaviorStatus', 'pregnancyStatus', 'parentInformation',
     ];
     const updates = {};
     allowedFields.forEach((field) => {
