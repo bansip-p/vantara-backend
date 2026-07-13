@@ -55,7 +55,10 @@ exports.getAllAnimals = async (req, res) => {
 // GET one animal's full profile (Animal + Digital Twin combined)
 exports.getAnimalProfile = async (req, res) => {
   try {
-    const animal = await Animal.findById(req.params.id);
+    const animal = await Animal.findById(req.params.id)
+      .populate('currentVeterinarian', 'name')
+      .populate('currentKeeper', 'name');
+
     if (!animal) {
       return res.status(404).json({ success: false, message: 'Animal not found' });
     }
