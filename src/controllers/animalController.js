@@ -71,7 +71,7 @@ exports.getAnimalProfile = async (req, res) => {
   }
 };
 
-// GET animal profile by QR code (Feature 8)
+// GET animal profile by QR code
 exports.getAnimalByQRCode = async (req, res) => {
   try {
     const { qrCode } = req.params;
@@ -89,7 +89,9 @@ exports.getAnimalByQRCode = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
-  // UPDATE an animal's details
+};
+
+// UPDATE an animal's details
 exports.updateAnimal = async (req, res) => {
   try {
     const allowedFields = [
@@ -133,7 +135,6 @@ exports.deleteAnimal = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-};
 
 // UPDATE the digital twin's health score based on new signals (this is where the "AI" runs)
 exports.recalculateHealthScore = async (req, res) => {
@@ -172,11 +173,8 @@ exports.recalculateHealthScore = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Digital twin not found for this animal' });
     }
 
-    // 🚨 NEW: Automatically create an alert if risk is Medium or High
     let createdAlert = null;
     if (result.riskLevel === 'Medium' || result.riskLevel === 'High') {
-      const animal = await Animal.findById(req.params.id);
-
       createdAlert = await AIAlert.create({
         animalId: req.params.id,
         alertType: 'Health Prediction',
@@ -191,7 +189,6 @@ exports.recalculateHealthScore = async (req, res) => {
         status: 'Open',
       });
 
-      // 📡 Broadcast the new alert LIVE to every connected browser
       const populatedAlert = await createdAlert.populate('animalId', 'name species qrCode');
       getIO().emit('newAlert', populatedAlert);
     }
