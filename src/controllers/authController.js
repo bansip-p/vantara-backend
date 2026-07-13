@@ -130,8 +130,9 @@ exports.updateProfile = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+};
 
-  // Returns a simple list of staff accounts, for assigning vets/keepers to animals
+// Returns a simple list of staff accounts, for assigning vets/keepers to animals
 exports.getStaffList = async (req, res) => {
   try {
     const users = await User.find({ isActive: true }).select('name role').sort({ name: 1 });
@@ -139,5 +140,4 @@ exports.getStaffList = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
-};
 };
