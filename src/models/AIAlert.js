@@ -5,11 +5,11 @@ const aiAlertSchema = new mongoose.Schema(
     animalId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Animal',
-      required: true,
+      required: false, // optional now — Inventory alerts aren't tied to a specific animal
     },
     alertType: {
       type: String,
-      enum: ['Behavior', 'Health Prediction', 'Diet', 'Medical', 'Medicine Overdue', 'Checkup Overdue'],
+      enum: ['Behavior', 'Health Prediction', 'Diet', 'Medical', 'Medicine Overdue', 'Checkup Overdue', 'Inventory'],
       required: true,
     },
     severity: {
