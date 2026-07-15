@@ -105,6 +105,14 @@ exports.updateAnimal = async (req, res) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
 
+    // ObjectId reference fields can't accept an empty string — an empty selection
+    // in the Edit Animal form means "no vet/keeper assigned," so treat "" as null
+    // rather than letting Mongoose try (and fail) to cast it to an ObjectId.
+    const objectIdFields = ['currentVeterinarian', 'currentKeeper'];
+    objectIdFields.forEach((field) => {
+      if (updates[field] === '') updates[field] = null;
+    });
+
     const animal = await Animal.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
 
     if (!animal) {
