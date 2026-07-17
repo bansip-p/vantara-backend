@@ -35,8 +35,10 @@ router.post('/seed-overdue-medicine/:animalId', authorize('SuperAdmin'), async (
       ],
     });
 
-    // Force createdAt to the backdated value directly (bypassing Mongoose's auto-timestamp)
-    await MedicalRecord.updateOne(
+    // Force createdAt to the backdated value directly using the raw MongoDB driver.
+    // Mongoose's timestamps:true marks createdAt as immutable and silently strips it
+    // from updateOne()/$set — going through .collection bypasses that Mongoose layer.
+    await MedicalRecord.collection.updateOne(
       { _id: record._id },
       { $set: { createdAt: backdatedDate } }
     );
